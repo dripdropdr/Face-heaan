@@ -18,8 +18,8 @@ class Config(object):
     test_root = '/data1/Datasets/anti-spoofing/test/data_align_256'
     test_list = 'test.txt'
 
-    lfw_root = '/data/Datasets/lfw/lfw-align-128'
-    lfw_test_list = '/data/Datasets/lfw/lfw_test_pair.txt'
+    lfw_root = './face_img'
+    lfw_test_list = './lfw_test_pair.txt'
 
     checkpoints_path = 'checkpoints'
     load_model_path = 'models/resnet18.pth'
@@ -27,7 +27,7 @@ class Config(object):
     save_interval = 10
 
     train_batch_size = 16  # batch size
-    test_batch_size = 60
+    test_batch_size = 1
 
     input_shape = (1, 128, 128)
 

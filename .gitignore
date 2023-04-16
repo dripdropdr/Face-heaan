@@ -1,3 +1,5 @@
 !.gitignore
 *.pyc
 *.pth
+face_img
+.DS_Store
