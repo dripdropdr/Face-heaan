@@ -61,6 +61,7 @@ class FeatureProcessing:
         self.face_detector = dlib.get_frontal_face_detector()
 
     def preproc(self, frame):
+        # 얼굴이 잡히지 않을 경우도 가정해야 함.
         d = self.face_detector(frame, 0)
         face = frame[d.top():d.bottom(), d.left():d.right()] # face 차원 확인하기
         face = cv2.resize(face, (250, 250), interpolation=cv2.INTER_CUBIC)
