@@ -36,45 +36,6 @@ from torch.nn import DataParallel
 #     model_dict.update(pretrained_dict)
 #     model.load_state_dict(model_dict)
 
-def load_image(img_path):
-    img = cv2.imread(img_path, 0) # 컬러는 상관 없어서 ?
-    if img is None:
-        raise 'read {} error'.format(img_path)
-    img = cv2.resize(img, (250, 250), interpolation=cv2.INTER_CUBIC)
-    img = np.dstack((img, np.fliplr(img)))
-    img = img.transpose((2, 0, 1))
-    img = img[:, np.newaxis, :, :]
-    img = img.astype(np.float32, copy=False)
-    img -= 127.5
-    img /= 127.5
-    return img
-
-
-def get_features(model, img_path, opt, device):
-
-    img = load_image(img_path)
-    cnt += 1
-
-    data = torch.from_numpy(img)
-    data = data.to(device)
-    output = model(data)
-    # output = output.data.cpu().numpy()
-
-    fe_1 = output[::2]
-    fe_2 = output[1::2]
-    feature = np.hstack((fe_1, fe_2))
-
-    return feature
-
-
-def get_feature_dict(test_list, features):
-    fe_dict = {}
-    for i, each in enumerate(test_list):
-        # key = each.split('/')[1]
-        fe_dict[each] = features[i]
-    return fe_dict
-
-
 def cosin_metric(x1, x2):
     return np.dot(x1, x2) / (np.linalg.norm(x1) * np.linalg.norm(x2))
 
@@ -114,13 +75,49 @@ def test_performance(fe_dict, pair_list):
     acc, th = cal_accuracy(sims, labels)
     return acc, th
 
+def get_feature_dict(test_list, features):
+    fe_dict = {}
+    for i, each in enumerate(test_list):
+        # key = each.split('/')[1]
+        fe_dict[each] = features[i]
+    return fe_dict
 
-def lfw_test(model, img_paths, compair_list, batch_size):
+
+def load_image(img_path):
+    img = cv2.imread(img_path, 0) # 컬러는 상관 없어서 ?
+    if img is None:
+        raise 'read {} error'.format(img_path)
+    img = cv2.resize(img, (250, 250), interpolation=cv2.INTER_CUBIC)
+    img = np.dstack((img, np.fliplr(img)))
+    img = img.transpose((2, 0, 1))
+    img = img[:, np.newaxis, :, :]
+    img = img.astype(np.float32, copy=False)
+    img -= 127.5
+    img /= 127.5
+    return img
+
+
+def get_features(model, img_path, opt, device):
+
+    img = load_image(img_path)
+    cnt += 1
+
+    data = torch.from_numpy(img)
+    data = data.to(device)
+    output = model(data)
+    # output = output.data.cpu().numpy()
+
+    fe_1 = output[::2]
+    fe_2 = output[1::2]
+    feature = np.hstack((fe_1, fe_2))
+
+    return feature
+
+
+def lfw_test(model, img_path, opt, device):
     s = time.time()
-    features = get_features(model, img_paths, batch_size=batch_size)
+    features = get_features(model, img_paths, opt, device)
     print(features.shape)
-    t = time.time() - s
-    print('total time is {}, average time is {}'.format(t, t / cnt))
     fe_dict = get_feature_dict(identity_list, features)
     # acc, th = test_performance(fe_dict, compair_list)
     # print('lfw face verification accuracy: ', acc, 'threshold: ', th)
