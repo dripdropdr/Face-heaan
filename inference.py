@@ -18,12 +18,6 @@ import dlib
 class FaceVerifying:
     def __init__(self, distance_method) -> None:
         self.distance_method = distance_method
-        self.fe_dict = self.call_feature_dict()
-
-    def call_feature_dict(self):
-        fe_dict = {}
-        # with open(): set feature value.
-        return fe_dict
 
     def cosin_metric(self, x1, x2):
         # x1 = x1.transpose((1,0))
@@ -84,7 +78,7 @@ class FeatureProcessing:
         else:
             return -1
 
-    def get_features(self, model, frame, opt, device):
+    def get_features(self, model, frame, device):
         pre_res = self.preproc(frame)
         if type(pre_res) != int:
             data = torch.from_numpy(pre_res)
@@ -106,15 +100,14 @@ class FeatureProcessing:
                 # Many face
                 return -1
 
+# def call_feature_dict():
+#         fe_dict = {}
+#         # with open(): set feature value.
+#         return fe_dict
 
-def lfw_test(model, frame, opt, device):
-    fe_proc = FeatureProcessing()
-    fa_verify = FaceVerifying('cosine')
+def lfw_test(model, frame, device, feature2):
 
-    feature1 = fe_proc.get_features(model, frame, opt, device)
-
-    frame2 = cv2.imread('sum_face.jpg')
-    feature2 = fe_proc.get_features(model, frame2, opt, device)
+    feature1 = fe_proc.get_features(model, frame, device)
     if type(feature1) != int:
         sim = fa_verify.verify_id(feature1, feature2)
         # print('lfw face verification accuracy: ', acc, 'threshold: ', th)
@@ -149,6 +142,12 @@ if __name__ == '__main__':
     model.to(cpu)
     model.eval()
 
+    fe_proc = FeatureProcessing()
+    fa_verify = FaceVerifying('cosine')
+
+    frame2 = cv2.imread('sum_face.jpg')
+    feature2 = fe_proc.get_features(model, frame2, cpu)
+
     webcam = cv2.VideoCapture(0)
 
     if not webcam.isOpened():
@@ -158,7 +157,7 @@ if __name__ == '__main__':
     while webcam.isOpened():
         status, frame = webcam.read()
         if status:
-            res = lfw_test(model, frame, opt, cpu)
+            res = lfw_test(model, frame, cpu, feature2 )
             if res not in ['0', '-1']:
                 # Verify result
                 # frame = cv2.flip(frame, 1)
