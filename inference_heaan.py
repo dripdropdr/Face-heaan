@@ -47,10 +47,19 @@ class FeatureProcessing:
         self.face_detector = dlib.get_frontal_face_detector()
 
     def preproc(self, frame):
-        # 얼굴이 잡히지 않을 경우도 가정해야 함.
         dets = self.face_detector(frame, 0)
+        # 얼굴이 탐지되지 않을 경우 전처리 (평균 얼굴 이미지를 위해서)
         if len(dets) == 0:
-            return 0
+            # return 0
+            face = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            face = cv2.resize(face, (125, 125), interpolation=cv2.INTER_CUBIC)
+            faces = np.dstack((face, np.fliplr(face))).transpose((2, 0, 1))
+            faces = faces[:, np.newaxis, :, :]
+            faces = faces.astype(np.float32, copy=False)
+            faces -= 127.5
+            faces /= 127.5
+            return faces
+        # 얼굴이 탐지되었을 경우 전처리
         elif len(dets) == 1:
             d = dets[0]
             face = frame[d.top():d.bottom(), d.left():d.right()] # face 차원 확인하기
@@ -90,6 +99,9 @@ class FeatureProcessing:
             else:
                 # Many face
                 return -1
+            
+            
+
 
 
 def call_feature_dict():
@@ -291,13 +303,13 @@ if __name__ == '__main__':
     fe_proc = FeatureProcessing()
     fa_verify = FaceVerifying('cosine')
 
-    # DB사진 또한 얼굴 인식이 되는 사진이어야함 !!!!!!
-    frame2 = cv2.imread('face_image/kim2/kim_01.jpg')
+    # DB사진 : 얼굴 이미지 평균
+    frame2 = cv2.imread('face_image/kim_average.jpg')
     feature2 = fe_proc.get_features(model, frame2, cpu)
     feature2 = np.squeeze(feature2)
     
-    # shape : (32*32,)
-    print(feature2.shape)
+    # (1024,)
+    # print(feature2.shape)
     
     # DB 사진
     b = feature2.tolist()
@@ -326,7 +338,7 @@ if __name__ == '__main__':
                 # print("cosine similarity : ", sim)
             
                 # threshold
-                thres = 0.7
+                thres = 0.4
                 # text 선언하면 에러뜸! ex) type = 'cosine'
                 result = compare('cosine',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
                 if result == "unlock":
