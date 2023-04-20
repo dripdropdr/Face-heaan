@@ -66,9 +66,12 @@ class FaceVerifying:
 class FeatureProcessing:
     def __init__(self) -> None:
         self.face_detector = dlib.get_frontal_face_detector()
+        
 
     def preproc(self, frame):
         dets = self.face_detector(frame, 0)
+        img_dir_path = 'face_image/face_images'
+
         # 얼굴이 탐지되지 않을 경우 전처리 (평균 얼굴 이미지를 위해서)
         if len(dets) == 0:
             # return 0
@@ -86,6 +89,13 @@ class FeatureProcessing:
             face = frame[d.top():d.bottom(), d.left():d.right()] # face 차원 확인하기
             face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
             face = cv2.resize(face, (125, 125), interpolation=cv2.INTER_CUBIC)
+                            
+            # 이미지 파일 경로 생성
+            img_path = os.path.join(img_dir_path, "{}.jpg".format(time.time()))
+            # 스페이스바 누르면 이미지 파일 저장
+            if cv2.waitKey(1) == 32:
+                cv2.imwrite(img_path, face)
+            
             cv2.imwrite('tmp.jpg', face)
             faces = np.dstack((face, np.fliplr(face))).transpose((2, 0, 1))
             faces = faces[:, np.newaxis, :, :]
@@ -163,8 +173,9 @@ if __name__ == '__main__':
     fe_proc = FeatureProcessing()
     fa_verify = FaceVerifying('cosine')
 
-    # DB사진 : 얼굴 이미지 평균
-    frame2 = cv2.imread('face_image/kim_average.jpg')
+    # DB사진 : 얼굴 이미지 평균 registration 전 이미지
+    frame2 = cv2.imread('face_image/average_image/default_image.jpg')
+
     feature2 = fe_proc.get_features(model, frame2, cpu)
     feature2 = np.squeeze(feature2)
 
@@ -172,21 +183,61 @@ if __name__ == '__main__':
     # print(type(feature2))
     
     
+    avg_dir_path = 'face_image/average_image'
+    img_dir_path = 'face_image/face_images'
+    
+
 
     webcam = cv2.VideoCapture(0)
+    
+    
 
     if not webcam.isOpened():
         print("Could not open webcam")
         exit()
-
     while webcam.isOpened():
-        status, frame = webcam.read()
+        status, frame = webcam.read()  
         if status:
             res = lfw_test(model, frame, cpu, feature2) # Similarity
-            if res not in ['0', '-1']:
+               
+            if len(os.listdir(img_dir_path)) < 5: 
+                if len(os.listdir(img_dir_path)) == 0:
+                    frame = cv2.putText(frame, "User Registration!", (350, 40), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
+                    frame = cv2.putText(frame, "Look front!", (350, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
+                elif len(os.listdir(img_dir_path)) == 1:
+                    frame = cv2.putText(frame, "Head up!", (350, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
+                elif len(os.listdir(img_dir_path)) == 2:
+                    frame = cv2.putText(frame, "Eyes on left!", (350, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
+                elif len(os.listdir(img_dir_path)) == 3:
+                    frame = cv2.putText(frame, "Eyes on right!", (350, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
+                elif len(os.listdir(img_dir_path)) == 4:
+                    frame = cv2.putText(frame, "Look front again!", (350, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
+                    
+            elif res not in ['0', '-1']:
                 # Verify result
                 # frame = cv2.flip(frame, 1)
                 # frame = cv2.rectangle(frame, (400,0), (510, 128), (0,255,0), 3)
+                # 이미지 파일들의 경로를 리스트로 만듦
+                
+                img_paths = [os.path.join(img_dir_path, filename) for filename in os.listdir(img_dir_path)]
+                
+                images = []
+                for img_path in img_paths:
+                    image = cv2.imread(img_path)
+                    if image is not None:  # 이미지가 제대로 읽혔을 때만 리스트에 추가
+                        image_resized = cv2.resize(image, (125, 125))  # 이미지를 500x500 크기로 리사이즈
+                        images.append(image_resized)
+
+                # 이미지들의 평균 계산
+                average_image = np.mean(images, axis=0).astype(np.uint8)
+
+                # 평균 이미지를 파일로 저장
+                cv2.imwrite('face_image/average_image/average.jpg', average_image)
+                
+                frame2 = cv2.imread('face_image/average_image/average.jpg')
+                feature2 = fe_proc.get_features(model, frame2, cpu)
+                feature2 = np.squeeze(feature2)   
+                res = lfw_test(model, frame, cpu, feature2) # Similarity
                 
                 # threshold
                 if res > 0.4:
@@ -201,11 +252,10 @@ if __name__ == '__main__':
             
             cv2.imshow("test", frame)
 
-        if cv2.waitKey(1) == 32:
-            break
+        # if cv2.waitKey(1) == 32:
+        #     break
     
 
 
     webcam.release()
     cv2.destroyAllWindows()
-
