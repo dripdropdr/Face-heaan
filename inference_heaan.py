@@ -49,7 +49,7 @@ class FeatureProcessing:
     def preproc(self, frame):
         dets = self.face_detector(frame, 0)
         img_dir_path = 'face_image/face_images'
-        # 얼굴이 탐지되지 않을 경우 전처리 (평균 얼굴 이미지를 위해서)
+        # when face not detected
         if len(dets) == 0:
             # return 0
             face = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -60,16 +60,15 @@ class FeatureProcessing:
             faces -= 127.5
             faces /= 127.5
             return faces
-        # 얼굴이 탐지되었을 경우 전처리
+        # when face detected
         elif len(dets) == 1:
             d = dets[0]
             face = frame[d.top():d.bottom(), d.left():d.right()] # face 차원 확인하기
             face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
             face = cv2.resize(face, (125, 125), interpolation=cv2.INTER_CUBIC)
-            
-            # 이미지 파일 경로 생성
+            # generating image path
             img_path = os.path.join(img_dir_path, "{}.jpg".format(time.time()))
-            # 스페이스바 누르면 이미지 파일 저장
+            # storing image when pressing space keyboard
             if cv2.waitKey(1) == 32:
                 cv2.imwrite(img_path, face)
                 
@@ -126,8 +125,6 @@ def lfw_test(model, frame, device):
 
 
 
-## 현재 : 뺀 값을 approx sign을 돌림
-## compare 함수쓰면 바로 가능
 def cosin_sim(a,b,eval,enc,dec,sk,pk,log_slots,num_slots,context):
     
   # denominator
@@ -169,7 +166,7 @@ def cosin_sim(a,b,eval,enc,dec,sk,pk,log_slots,num_slots,context):
   eval.left_rotate_reduce(ctxt2_sqr,1,num_slots,ctxt2_rot)
 
   # sqrt
-  ## sigma 결과값 범위 : 대략 10 ~ 30
+  ## sigma result range : around 10 ~ 30
   ## divide by 100 and mult 10 to later result value
   ## input range : 2^-18 ≤ x ≤ 2
 
@@ -228,7 +225,8 @@ def compare(type,thres,comp_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
     thres_ctxt = heaan.Ciphertext(context)
     enc.encrypt(thres_msg, pk, thres_ctxt)
     eval.sub(thres_ctxt,comp_ctxt,sub_ctxt)
-  ## cos_similarity - threshold > 0 이면 그 값을 1로 (그냥 그 뺀값도 숨겨버려려)
+    
+  ## cos_similarity - threshold > 0 ==> 1
 
   sign_ctxt = heaan.Ciphertext(context)
   approx.sign(eval, sub_ctxt, sign_ctxt)
@@ -304,17 +302,12 @@ if __name__ == '__main__':
     fe_proc = FeatureProcessing()
     fa_verify = FaceVerifying('cosine')
 
-    # DB사진 : 얼굴 이미지 평균 registration 전 이미지
+    # DB image : before registration. default image
     frame2 = cv2.imread('face_image/average_image/default_image.jpg')
     feature2 = fe_proc.get_features(model, frame2, cpu)
     feature2 = np.squeeze(feature2)
     
-    
-    
-    # (1024,)
-    # print(feature2.shape)
-    
-    # DB 사진
+    # DB image
     b = feature2.tolist()
     b = b + (num_slots-len(b))*[0]
     
@@ -354,14 +347,14 @@ if __name__ == '__main__':
                 images = []
                 for img_path in img_paths:
                     image = cv2.imread(img_path)
-                    if image is not None:  # 이미지가 제대로 읽혔을 때만 리스트에 추가
-                        image_resized = cv2.resize(image, (125, 125))  # 이미지를 500x500 크기로 리사이즈
+                    if image is not None:  # adding to list when image is recognized properly
+                        image_resized = cv2.resize(image, (125, 125))  # image 125*125 resize
                         images.append(image_resized)
 
-                # 이미지들의 평균 계산
+                # average of images
                 average_image = np.mean(images, axis=0).astype(np.uint8)
 
-                # 평균 이미지를 파일로 저장
+                # storing average face image
                 cv2.imwrite('face_image/average_image/average.jpg', average_image)
                 
                 frame2 = cv2.imread('face_image/average_image/average.jpg')
@@ -371,19 +364,17 @@ if __name__ == '__main__':
                 b = feature2.tolist()
                 b = b + (num_slots-len(b))*[0]
                 
-                # res => 리스트
+                # res => list
                 a = res.tolist()
                 a = a + (num_slots-len(a))*[0]
                 res_ctxt = cosin_sim(a,b,eval,enc,dec,sk,pk,log_slots,num_slots,context)
                 
+                # similarity
                 sim = heaan.Message(log_slots)
                 dec.decrypt(res_ctxt, sk, sim)
-                # 얼굴 인식될때마다 cosine similarity 출력
-                print("cosine similarity : ", sim)
             
                 # threshold
-                thres = 0.2
-                # text 선언하면 에러뜸! ex) type = 'cosine'
+                thres = 0.5
                 result = compare('cosine',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
                 if result == "unlock":
                     frame = cv2.putText(frame, "Unlock", (350, 40), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
