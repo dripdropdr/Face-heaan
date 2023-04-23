@@ -93,12 +93,6 @@ class FeatureProcessing:
             fe_1 = feat[::2]
             fe_2 = feat[1::2]
             feature = np.hstack((fe_1, fe_2))
-            # import sys
-            # np.set_printoptions(threshold=sys.maxsize)
-            # print(feature.tolist())
-                        
-            # feature : (1,1024) shape
-            # print("feature함수", feature[0])
             return feature[0]
         else:
             if pre_res == 0:
@@ -381,11 +375,11 @@ if __name__ == '__main__':
                 a = res.tolist()
                 a = a + (num_slots-len(a))*[0]
                 res_ctxt = cosin_sim(a,b,eval,enc,dec,sk,pk,log_slots,num_slots,context)
-
+                
                 sim = heaan.Message(log_slots)
                 dec.decrypt(res_ctxt, sk, sim)
                 # 얼굴 인식될때마다 cosine similarity 출력
-                # print("cosine similarity : ", sim)
+                print("cosine similarity : ", sim)
             
                 # threshold
                 thres = 0.2
@@ -393,6 +387,8 @@ if __name__ == '__main__':
                 result = compare('cosine',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
                 if result == "unlock":
                     frame = cv2.putText(frame, "Unlock", (350, 40), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
+                else:
+                    frame = cv2.putText(frame, "Lock", (350, 40), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
                 
             elif res == '-1':
                 # Many face
