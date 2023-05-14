@@ -15,6 +15,8 @@ import time
 from config import Config
 from torch.nn import DataParallel
 import dlib
+import glob
+
 
 import piheaan as heaan
 from piheaan.math import sort
@@ -375,12 +377,9 @@ if __name__ == '__main__':
     feature2 = fe_proc.get_features(model, frame2, cpu)
     feature2 = np.squeeze(feature2)
     
-    # DB image
-    b = feature2.tolist()
-    b = b + (num_slots-len(b))*[0]
-    
     avg_dir_path = 'face_image/average_image'
     img_dir_path = 'face_image/face_images'
+    ctxt_path = 'face_image/average_ctxt/ctxt1.ctxt'
     
     webcam = cv2.VideoCapture(0)
 
@@ -429,21 +428,47 @@ if __name__ == '__main__':
                 feature2 = fe_proc.get_features(model, frame2, cpu)
                 feature2 = np.squeeze(feature2)   
                 
-                b = feature2.tolist()
-                b = b + (num_slots-len(b))*[0]
+                # avg : average face
+                avg = feature2.tolist()
+                avg = avg + (num_slots-len(avg))*[0]
+                # real : real time face
+                real = res.tolist()
+                real = real + (num_slots-len(real))*[0]
                 
-                # res => list
-                a = res.tolist()
-                a = a + (num_slots-len(a))*[0]
-                res_ctxt = cosin_sim(a,b,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                msg2 = heaan.Message(log_slots)
+                msg1 = heaan.Message(log_slots)
+                for i in range(num_slots):
+                    msg1[i] = avg[i]
+                    msg2[i] = real[i]
+                    
+                ctxt1 = heaan.Ciphertext(context)
+                ctxt2 = heaan.Ciphertext(context)
+                
+                enc.encrypt(msg1, pk, ctxt1)
+                enc.encrypt(msg2, pk, ctxt2)
+                ctxt1.save('face_image/average_ctxt/ctxt1.ctxt')
+                
+                # threshold
+                thres = 0.5
+                
+                # 1) cosine similarity measurement
+                res_ctxt = cosin_sim(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                result = compare('cosine',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                
+                # # 2) euclidean distance measurement
+                # res_ctxt = euclidean_distance(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                # result = compare('euclidean',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                
+                # # 3) manhattan distance measurement
+                # res_ctxt = manhattan_distance(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                # result = compare('manhattan',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
                 
                 # similarity
                 sim = heaan.Message(log_slots)
                 dec.decrypt(res_ctxt, sk, sim)
+                print(sim)
             
-                # threshold
-                thres = 0.5
-                result = compare('cosine',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                
                 if result == "unlock":
                     frame = cv2.putText(frame, "Unlock", (350, 40), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
                 else:
