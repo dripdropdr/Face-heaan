@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+
 Created on 18-5-30 下午4:55
 
 @author: ronghuaiyang
@@ -14,6 +15,8 @@ import time
 from config import Config
 from torch.nn import DataParallel
 import dlib
+import glob
+
 
 import piheaan as heaan
 from piheaan.math import sort
@@ -125,88 +128,157 @@ def lfw_test(model, frame, device):
 
 
 
-def cosin_sim(a,b,eval,enc,dec,sk,pk,log_slots,num_slots,context):
-    
-  # denominator
-  msg1 = heaan.Message(log_slots)
-  msg2 = heaan.Message(log_slots)
-  for i in range(num_slots):
-    msg1[i] = a[i]
-    msg2[i] = b[i]
+def cosin_sim(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context):
 
-  # mult 
-  ctxt1 = heaan.Ciphertext(context)
-  ctxt2 = heaan.Ciphertext(context)
-  ctxt3 = heaan.Ciphertext(context)
+    # denominator
+    ctxt1 = heaan.Ciphertext(context)
+    ctxt1.load(ctxt_path)
+    # mult 
+    ctxt3 = heaan.Ciphertext(context)
+    eval.mult(ctxt1, ctxt2, ctxt3)
 
-  enc.encrypt(msg1, pk, ctxt1)
-  enc.encrypt(msg2, pk, ctxt2)
-  eval.mult(ctxt1, ctxt2, ctxt3)
+    # sigma
+    denom_ctxt = heaan.Ciphertext(context)
+    eval.left_rotate_reduce(ctxt3,1,num_slots,denom_ctxt)
 
-  # sigma
-  denom_ctxt = heaan.Ciphertext(context)
-  eval.left_rotate_reduce(ctxt3,1,num_slots,denom_ctxt)
- 
-  # numerator
+    # numerator
+
+    # square
+    ctxt1_sqr = heaan.Ciphertext(context)
+    eval.square(ctxt1, ctxt1_sqr)
+
+    ctxt2_sqr = heaan.Ciphertext(context)
+    eval.square(ctxt2, ctxt2_sqr)
+
+    # sigma
+    ctxt1_rot = heaan.Ciphertext(context)
+    eval.left_rotate_reduce(ctxt1_sqr,1,num_slots,ctxt1_rot)
+
+    ctxt2_rot = heaan.Ciphertext(context)
+    eval.left_rotate_reduce(ctxt2_sqr,1,num_slots,ctxt2_rot)
+
+    # sqrt
+    ## sigma output range : about 10 ~ 30
+    ## divide by 100 and mult 10 to later result value
+    ## input range : 2^-18 ≤ x ≤ 2
+
+    hun_msg = heaan.Message(log_slots)
+    for i in range(num_slots):
+        hun_msg[i] = 0.01
+
+    eval.mult(ctxt1_rot,hun_msg,ctxt1_rot)
+
+    eval.mult(ctxt2_rot,hun_msg,ctxt2_rot)
+
+    ctxt1_sqrt = heaan.Ciphertext(context)
+    approx.sqrt(eval,ctxt1_rot,ctxt1_sqrt)
+
+    ctxt2_sqrt = heaan.Ciphertext(context)
+    approx.sqrt(eval,ctxt2_rot,ctxt2_sqrt)
+
+    # mult and inverse 
+
+    ## inverse range : 1 ≤ x ≤ 2^22 or 2^-10 ≤ x ≤ 1
+    num_ctxt = heaan.Ciphertext(context)
+    eval.mult(ctxt1_sqrt, ctxt2_sqrt, num_ctxt)
+
+    eval.mult(num_ctxt,1000,num_ctxt)
+
+    num_inverse = heaan.Ciphertext(context)
+    approx.inverse(eval,num_ctxt,num_inverse)
+
+    eval.mult(num_inverse,10, num_inverse)
+
+    eval.bootstrap(num_inverse, num_inverse)
+
+    # cosine similarity
+
+    # mult denominator & numberator^-1
+    res_ctxt = heaan.Ciphertext(context)
+    eval.mult(num_inverse,denom_ctxt,res_ctxt)
+
+    return res_ctxt
+
+def euclidean_distance(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context):
+
+    # sub
+    ctxt1 = heaan.Ciphertext(context)
+    ctxt1.load(ctxt_path)
+
+    ctxt3 = heaan.Ciphertext(context)
+    eval.sub(ctxt1, ctxt2, ctxt3)
+
+    # square
+    ctxt_square = heaan.Ciphertext(context)
+    eval.square(ctxt3, ctxt_square)
+
+    # sigma
+    ctxt_sig = heaan.Ciphertext(context)
+    eval.left_rotate_reduce(ctxt_square,1,num_slots,ctxt_sig)
+
+    # sqrt
+    ## ctxt_sig is bigger than 2
+    ## input range : 2^-18 ≤ x ≤ 2
+
+    eval.mult(ctxt_sig,0.01,ctxt_sig)
+    ctxt_sqrt = heaan.Ciphertext(context)
+    approx.sqrt(eval,ctxt_sig,ctxt_sqrt)
+    eval.mult(ctxt_sqrt,10,ctxt_sqrt)
+
+    return ctxt_sqrt
+
+def manhattan_distance(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context):
   
-  ## how to calculate without sqrt?
+    small_tmp_ctxt= heaan.Ciphertext(context)
+    small_ctxt = heaan.Ciphertext(context)
+    big_tmp_ctxt = heaan.Ciphertext(context)
+    big_ctxt = heaan.Ciphertext(context)
+    abs_ctxt = heaan.Ciphertext(context)
+    res_ctxt = heaan.Ciphertext(context)
+    ctxt3 = heaan.Ciphertext(context)
+    ctxt1 = heaan.Ciphertext(context)
+    ctxt1.load(ctxt_path)
 
-  # square
-  ctxt1_sqr = heaan.Ciphertext(context)
-  eval.square(ctxt1, ctxt1_sqr)
 
-  ctxt2_sqr = heaan.Ciphertext(context)
-  eval.square(ctxt2, ctxt2_sqr)
+    ## if ctxt1 < ctxt2 -> 0
+    comp_ctxt = heaan.Ciphertext(context)
+    approx.compare(eval, ctxt1, ctxt2, comp_ctxt)
 
-  # sigma
-  ctxt1_rot = heaan.Ciphertext(context)
-  eval.left_rotate_reduce(ctxt1_sqr,1,num_slots,ctxt1_rot)
+    ## discrete equal zero 
+    ## input range : |x| ≤ 54 (x : int)
+    discrete_ctxt = heaan.Ciphertext(context)
+    two_msg = heaan.Message(log_slots)
+    for i in range(num_slots):
+        two_msg[i] = 2
+    two_ctxt = heaan.Ciphertext(context)
+    enc.encrypt(two_msg,pk,two_ctxt)
 
-  ctxt2_rot = heaan.Ciphertext(context)
-  eval.left_rotate_reduce(ctxt2_sqr,1,num_slots,ctxt2_rot)
+    comp_tmp_ctxt = heaan.Ciphertext(context)
+    eval.mult(two_ctxt,comp_ctxt,comp_tmp_ctxt)
+    approx.discrete_equal_zero(eval, comp_tmp_ctxt, discrete_ctxt)
 
-  # sqrt
-  ## sigma result range : around 10 ~ 30
-  ## divide by 100 and mult 10 to later result value
-  ## input range : 2^-18 ≤ x ≤ 2
+    # sub
+    eval.sub(ctxt1, ctxt2, ctxt3)
 
-  hun_msg = heaan.Message(log_slots)
-  for i in range(num_slots):
-    hun_msg[i] = 0.01
+    # small_tmp_ctxt = remain only minus values
+    eval.mult(ctxt3,discrete_ctxt,small_tmp_ctxt)
+    # small_ctxt = - to +
+    eval.negate(small_tmp_ctxt,small_ctxt)
 
-  eval.mult(ctxt1_rot,hun_msg,ctxt1_rot)
+    one_msg = heaan.Message(log_slots)
+    for i in range(num_slots):
+        one_msg[i] = 1
+    one_ctxt = heaan.Ciphertext(context)
+    enc.encrypt(one_msg, pk, one_ctxt)
 
-  eval.mult(ctxt2_rot,hun_msg,ctxt2_rot)
+    eval.sub(one_ctxt,discrete_ctxt,big_tmp_ctxt)
+    eval.mult(big_tmp_ctxt,ctxt3,big_ctxt)
+    eval.add(big_ctxt,small_ctxt,abs_ctxt)
 
-  ctxt1_sqrt = heaan.Ciphertext(context)
-  approx.sqrt(eval,ctxt1_rot,ctxt1_sqrt)
+    ## sigma
+    eval.left_rotate_reduce(abs_ctxt,1,num_slots,res_ctxt)
 
-  ctxt2_sqrt = heaan.Ciphertext(context)
-  approx.sqrt(eval,ctxt2_rot,ctxt2_sqrt)
-
-  # mult and inverse 
-
-  ## inverse range : 1 ≤ x ≤ 2^22 or 2^-10 ≤ x ≤ 1
-  num_ctxt = heaan.Ciphertext(context)
-  eval.mult(ctxt1_sqrt, ctxt2_sqrt, num_ctxt)
-
-  eval.mult(num_ctxt,1000,num_ctxt)
-
-  num_inverse = heaan.Ciphertext(context)
-  approx.inverse(eval,num_ctxt,num_inverse)
-
-  eval.mult(num_inverse,10, num_inverse)
-
-  eval.bootstrap(num_inverse, num_inverse)
-
-  # cosine similarity
-
-  # mult denominator & numberator^-1
-  res_ctxt = heaan.Ciphertext(context)
-  eval.mult(num_inverse,denom_ctxt,res_ctxt)
-
-  return res_ctxt
-
+    return res_ctxt
 
 def compare(type,thres,comp_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context):
   thres_list = []
@@ -242,8 +314,6 @@ def compare(type,thres,comp_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
 
   return res
     
-    
-
 
 
 if __name__ == '__main__':
@@ -307,12 +377,9 @@ if __name__ == '__main__':
     feature2 = fe_proc.get_features(model, frame2, cpu)
     feature2 = np.squeeze(feature2)
     
-    # DB image
-    b = feature2.tolist()
-    b = b + (num_slots-len(b))*[0]
-    
     avg_dir_path = 'face_image/average_image'
     img_dir_path = 'face_image/face_images'
+    ctxt_path = 'face_image/average_ctxt/ctxt1.ctxt'
     
     webcam = cv2.VideoCapture(0)
 
@@ -361,21 +428,47 @@ if __name__ == '__main__':
                 feature2 = fe_proc.get_features(model, frame2, cpu)
                 feature2 = np.squeeze(feature2)   
                 
-                b = feature2.tolist()
-                b = b + (num_slots-len(b))*[0]
+                # avg : average face
+                avg = feature2.tolist()
+                avg = avg + (num_slots-len(avg))*[0]
+                # real : real time face
+                real = res.tolist()
+                real = real + (num_slots-len(real))*[0]
                 
-                # res => list
-                a = res.tolist()
-                a = a + (num_slots-len(a))*[0]
-                res_ctxt = cosin_sim(a,b,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                msg2 = heaan.Message(log_slots)
+                msg1 = heaan.Message(log_slots)
+                for i in range(num_slots):
+                    msg1[i] = avg[i]
+                    msg2[i] = real[i]
+                    
+                ctxt1 = heaan.Ciphertext(context)
+                ctxt2 = heaan.Ciphertext(context)
+                
+                enc.encrypt(msg1, pk, ctxt1)
+                enc.encrypt(msg2, pk, ctxt2)
+                ctxt1.save('face_image/average_ctxt/ctxt1.ctxt')
+                
+                # threshold
+                thres = 0.5
+                
+                # 1) cosine similarity measurement
+                res_ctxt = cosin_sim(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                result = compare('cosine',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                
+                # # 2) euclidean distance measurement
+                # res_ctxt = euclidean_distance(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                # result = compare('euclidean',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                
+                # # 3) manhattan distance measurement
+                # res_ctxt = manhattan_distance(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                # result = compare('manhattan',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
                 
                 # similarity
                 sim = heaan.Message(log_slots)
                 dec.decrypt(res_ctxt, sk, sim)
+                print(sim)
             
-                # threshold
-                thres = 0.5
-                result = compare('cosine',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                
                 if result == "unlock":
                     frame = cv2.putText(frame, "Unlock", (350, 40), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
                 else:
@@ -397,4 +490,3 @@ if __name__ == '__main__':
 
     webcam.release()
     cv2.destroyAllWindows()
-
