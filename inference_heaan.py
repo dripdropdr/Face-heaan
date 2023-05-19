@@ -84,9 +84,9 @@ if __name__ == '__main__':
     fe_proc = FeatureProcessing()
     
     # threshold
-    cos_thres = opt.cosine_thres
-    euc_thres = opt.euc_thres
-    man_thres = opt.man_thres
+    cos_thres = opt.cosin_threshold
+    euc_thres = opt.euc_threshold
+    man_thres = opt.man_threshold
 
     register_feat = np.array([])
     
@@ -100,15 +100,16 @@ if __name__ == '__main__':
         if status:
             feature = fe_proc.get_features(model, frame, cpu)
             h, w = frame.shape[:2]
-            font_state = (int(w/2), int(h/3*2))
-
+            font_state = (int(w/2), int(h*0.8))
             # User registeration part
             if register_feat.shape[0] <= 4: 
                 (text_width, text_height) = cv2.getTextSize("User Registration Phase. Press space", cv2.FONT_HERSHEY_PLAIN, 3, 3)[0]
                 text_offset_x = (w - text_width) // 2
-                text_offset_y = (h + text_height) // 2
-                frame = cv2.putText(frame, "User Registration Phase. Press space", (text_offset_x, text_offset_y), cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3, cv2.LINE_AA)
+                text_offset_y = (h + text_height) // 8
                 
+                
+                frame = cv2.putText(frame, "User Registration Phase. Press space", (text_offset_x, text_offset_y), cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3, cv2.LINE_AA)
+
                 if register_feat.shape[0] == 0:
                     frame = cv2.putText(frame, "Look front!", font_state, cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 0), 3, cv2.LINE_AA)
                 elif register_feat.shape[0] == 1:
