@@ -176,12 +176,12 @@ if __name__ == '__main__':
                 result = he.compare('cosine', thres, res_ctxt)
                 
                 # # 2) euclidean distance measurement
-                # res_ctxt = euclidean_distance(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context)
-                # result = compare('euclidean',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                # res_ctxt = he.euclidean_distance(ctxt1, ctxt2)
+                # result = he.compare('euclidean', thres, res_ctxt)
                 
                 # # 3) manhattan distance measurement
-                # res_ctxt = manhattan_distance(ctxt_path,ctxt2,eval,enc,dec,sk,pk,log_slots,num_slots,context)
-                # result = compare('manhattan',thres,res_ctxt,eval,enc,dec,sk,pk,log_slots,num_slots,context)
+                # res_ctxt = he.manhattan_distance(ctxt1, ctxt2)
+                # result = he.compare('manhattan', thres, res_ctxt)
                 
                 #print similarity
                 print(he.similarity_calc(res_ctxt))
