@@ -61,7 +61,8 @@ class Heaan:
   def similarity_calc(self, res_ctxt):
       sim = heaan.Message(self.log_slots)
       self.dec.decrypt(res_ctxt, self.sk, sim)
-      return sim
+      sim_ = sum(sim)/len(sim)
+      return sim_
 
 
   def feat_msg_generate(self, feat):

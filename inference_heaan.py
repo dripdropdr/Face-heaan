@@ -15,26 +15,6 @@ from heaan_utils import Heaan
 import pandas as pd
 
 
-class FaceVerifying:
-    def __init__(self, distance_method) -> None:
-        self.distance_method = distance_method
-
-    def cal_accuracy(self, y_score, y_true):
-        y_score = np.asarray(y_score)
-        y_true = np.asarray(y_true)
-        best_acc = 0
-        best_th = 0
-        for i in range(len(y_score)):
-            th = y_score[i]
-            y_test = (y_score >= th)
-            acc = np.mean((y_test == y_true).astype(int))
-            if acc > best_acc:
-                best_acc = acc
-                best_th = th
-        return (best_acc, best_th)
-
-
-
 class FeatureProcessing:
     def __init__(self) -> None:
         self.face_detector = dlib.get_frontal_face_detector()
@@ -116,12 +96,11 @@ if __name__ == '__main__':
     model.eval()
 
     fe_proc = FeatureProcessing()
-    fa_verify = FaceVerifying('cosine')
     
     avg_dir_path = 'face_image/average_image'
     img_dir_path = 'face_image/face_images'
 
-    register_feat = None
+    register_feat = np.array([])
     avg_feat = None
     
     webcam = cv2.VideoCapture(0)
@@ -137,10 +116,10 @@ if __name__ == '__main__':
             # User registeration part
             if register_feat.shape[0] <= 5: 
                 if isinstance(feature, np.ndarray):
-                    if not register_feat:
+                    if register_feat.size == 0:
                         register_feat = feature
                     else:
-                        register_feat = np.stack(register_feat, feature) # stack
+                        register_feat = np.concatenate([register_feat, feature]) # stack
                 
                     if register_feat.shape[0] == 0:
                         frame = cv2.putText(frame, "User Registration Start!", (350, 40), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3, cv2.LINE_AA)
@@ -164,24 +143,26 @@ if __name__ == '__main__':
                     continue
             
             elif isinstance(feature, np.ndarray):
-                input_feat = feature
+                input_feat = np.squeeze(feature)
                 msg2 = he.feat_msg_generate(input_feat)
                 he.encrypt(msg2, ctxt2)
                
                 # threshold
-                thres = 0.5
+                cos_thres = opt.cosine_thres
+                euc_thres = opt.euc_thres
+                man_thres = opt.man_thres
                 
                 # 1) cosine similarity measurement
                 res_ctxt = he.cosin_sim(ctxt1, ctxt2)
-                result = he.compare('cosine', thres, res_ctxt)
+                result = he.compare('cosine', cos_thres, res_ctxt)
                 
                 # # 2) euclidean distance measurement
                 # res_ctxt = he.euclidean_distance(ctxt1, ctxt2)
-                # result = he.compare('euclidean', thres, res_ctxt)
+                # result = he.compare('euclidean', euc_thres, res_ctxt)
                 
                 # # 3) manhattan distance measurement
                 # res_ctxt = he.manhattan_distance(ctxt1, ctxt2)
-                # result = he.compare('manhattan', thres, res_ctxt)
+                # result = he.compare('manhattan', man_thres, res_ctxt)
                 
                 #print similarity
                 print(he.similarity_calc(res_ctxt))
