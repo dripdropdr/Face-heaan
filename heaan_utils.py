@@ -37,7 +37,7 @@ class Heaan:
       # When a key is created, it can be used again to save a new key without creating a new one
       self.sk = heaan.SecretKey(self.context, self.key_file_path+"/secretkey.bin") # load secret key
       self.pk = heaan.KeyPack(self.context, self.key_file_path+"/") # load public key
-      self.pk.load_self.enc_key()
+      self.pk.load_enc_key()
       self.pk.load_mult_key()
 
       self.eval = heaan.HomEvaluator(self.context, self.pk) # to load piheaan basic function
