@@ -19,27 +19,26 @@ class Heaan:
       self.pk = None
       self.log_slots = 15
       self.num_slots = 2**self.log_slots
-      # self.ctxt_path = 'face_image/average_ctxt/ctxt1.ctxt'
 
 
   def heaan_initilize(self):
 
       heaan.make_bootstrappable(self.context) # make parameter bootstrapable
 
-      # create and save secret keys
-      self.sk = heaan.SecretKey(self.context) # create secret key
+      # # create and save secret keys
+      # self.sk = heaan.SecretKey(self.context) # create secret key
 
-      # create and save public keys
-      key_generator = heaan.KeyGenerator(self.context, sk) # create public key
-      key_generator.gen_common_keys()
-      self.pk = key_generator
+      # # create and save public keys
+      # key_generator = heaan.KeyGenerator(self.context, self.sk) # create public key
+      # key_generator.gen_common_keys()
+      # key_generator.save(self.key_file_path+"/") # save public key
       
-      # # load secret key and public key
-      # # When a key is created, it can be used again to save a new key without creating a new one
-      # sk = heaan.SecretKey(self.context,self.key_file_path+"/secretkey.bin") # load secret key
-      # pk = heaan.KeyPack(self.context, self.key_file_path+"/") # load public key
-      # pk.load_self.enc_key()
-      # pk.load_mult_key()
+      # load secret key and public key
+      # When a key is created, it can be used again to save a new key without creating a new one
+      self.sk = heaan.SecretKey(self.context, self.key_file_path+"/secretkey.bin") # load secret key
+      self.pk = heaan.KeyPack(self.context, self.key_file_path+"/") # load public key
+      self.pk.load_self.enc_key()
+      self.pk.load_mult_key()
 
       self.eval = heaan.HomEvaluator(self.context, self.pk) # to load piheaan basic function
       self.dec = heaan.Decryptor(self.context) # for self.decrypt
