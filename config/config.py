@@ -46,3 +46,7 @@ class Config(object):
     lr_step = 10
     lr_decay = 0.95  # when val_loss increase, lr = lr*lr_decay
     weight_decay = 5e-4
+
+    cosine_thres = 0.25572848
+    euc_thres = 1.5146637
+    man_thres = 38.710526
