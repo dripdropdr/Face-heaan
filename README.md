@@ -16,9 +16,9 @@
 
 
 ## 2. Environment
-- Please notice that we assume that you are using 'PyTorch' and model type as 'cpu'. Python version is 3.9.
+- Please notice that we assume that you are using 'PyTorch' and device type as 'cpu'. Python version is 3.9.
 - Installing all the requirements may take some time. After installation, you can run the codes.
-- Specific methods for setting preferences are described in #3.
+- Specific methods for setting preferences are described in #4.
 
 ## 3. Pre-Trained Model Download
 
@@ -34,7 +34,7 @@
 
 ## 4. Installation
 
-- [```requirements.txt```][link1] file is required to set up the environment for running the program. This file contains a list of all the libraries needed to run your program and their versions. 
+- [```requirements.txt```][link1] file is required to set up the virtual environment for running the program. This file contains a list of all the libraries needed to run your program and their versions. 
 
   #### 1. In **venv** Environment,
 
