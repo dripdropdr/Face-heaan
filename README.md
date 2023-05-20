@@ -39,23 +39,29 @@
   #### 1. In **venv** Environment,
 
   ```
-  $ source venv/bin/activate
+  
+  $ python -m venv [your virtual environment name]
+
+  $ source [your virtual environment name]/Scripts/activate
 
   $ pip install -r requirements.txt
   ```
 
+  - Create your own virtual environment.
   - Write the commands to activate the virtual environment and install the necessary libraries.
-  - We've assumed that your environment is named 'venv'. If your virtual environment has a different name, you'll need to modify it to your name.
   - You have a 'requirements.txt' file that lists the required libraries, use the command **pip install -r requirements.txt** to install libraries.
 
   #### 2. In **Anaconda** Environment,
 
   ```
+  $ conda create -n [your virtual environment name] python=3.9
+  
   $ conda activate [your virtual environment name]
 
   $ pip install -r requirements.txt
   ```
 
+  - Create your own virtual environment.
   - Activate your Anaconda virtual environment where you want to install the package. If your virtual environment is named 'piheaanenv', you can type **conda activate piheaanenv**.
   - Use the command **pip install -r requirements.txt** to install libraries.
 
