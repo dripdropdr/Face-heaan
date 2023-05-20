@@ -14,9 +14,11 @@
     - Webcam Inference
 
 
-
 ## 2. Environment
-- Please notice that we assume that you are using 'PyTorch' and device type as 'cpu'. Python version is 3.9.
+
+- You must need a camera connected on your environment.
+- Python version is 3.9.
+- Please notice that we assume that you are using 'PyTorch' and device type as 'cpu'.
 - Installing all the requirements may take some time. After installation, you can run the codes.
 - Specific methods for setting preferences are described in #4.
 
@@ -39,14 +41,12 @@
   #### 1. In **venv** Environment,
 
   ```
-  
   $ python -m venv [your virtual environment name]
 
   $ source [your virtual environment name]/Scripts/activate
 
   $ pip install -r requirements.txt
   ```
-
   - Create your own virtual environment.
   - Write the commands to activate the virtual environment and install the necessary libraries.
   - You have a 'requirements.txt' file that lists the required libraries, use the command **pip install -r requirements.txt** to install libraries.
