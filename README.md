@@ -33,11 +33,12 @@
 - A correct location for the pre-trained model is shown below.
 
   ```
-  /face-heaan/checkpoints/resnet18_110.pth
+  ./checkpoints/resnet18_110.pth
   ```
 
 ## 4. Installation
 
+- Please download pytorch depending on your OS. Instruction is in [here](https://pytorch.org/get-started/previous-versions/#v1120).
 - [```requirements.txt```][link1] file is required to set up the virtual environment for running the program. This file contains a list of all the libraries needed to run your program and their versions. 
 
   #### 1. In **venv** Environment,
@@ -46,6 +47,8 @@
   $ python -m venv [your virtual environment name]
 
   $ source [your virtual environment name]/Scripts/activate
+  
+  $ pip install torch==1.12.0 #for Mac
 
   $ pip install -r requirements.txt
   ```
@@ -59,6 +62,8 @@
   $ conda create -n [your virtual environment name] python=3.9
   
   $ conda activate [your virtual environment name]
+  
+  $ conda install pytorch==1.12.0 -c pytorch #for Mac
 
   $ pip install -r requirements.txt
   ```
