@@ -38,7 +38,7 @@
 
 ## 4. Installation
 
-- Please download pytorch depending on your OS. Instruction is in [here](https://pytorch.org/get-started/previous-versions/#v1120).
+- Please download pytorch 1.12.0 depending on your OS. Instruction is in [here](https://pytorch.org/get-started/previous-versions/#v1120).
 - [```requirements.txt```][link1] file is required to set up the virtual environment for running the program. This file contains a list of all the libraries needed to run your program and their versions. 
 
   #### 1. In **venv** Environment,
