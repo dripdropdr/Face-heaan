@@ -96,8 +96,29 @@
     - Too many faces : When many faces are detected.
 
 
+## 6. Change Measurement Method
 
-## 6. Reference
+```
+# 1) cosine similarity measurement
+res_ctxt = he.cosin_sim(ctxt1, ctxt2)
+result = he.compare('cosine', cos_thres, res_ctxt)
+
+# # 2) euclidean distance measurement
+# res_ctxt = he.euclidean_distance(ctxt1, ctxt2)
+# result = he.compare('euclidean', euc_thres, res_ctxt)
+
+# # 3) manhattan distance measurement
+# res_ctxt = he.manhattan_distance(ctxt1, ctxt2)
+# result = he.compare('manhattan', man_thres, res_ctxt)
+```
+
+- In [inference_heaan.py][link] file, you'll find codes like the one above. When you download and run the code, it is currently set to the cosine similarity measurement technique.
+- If you want to change to the euclidean similarity measure, you can comment out the rest of the block and uncomment the second and third lines of the second block.
+- If you want to change to manhattan similarity measurement, you can comment out the rest of the blocks and uncomment the second and third lines of the third block.
+
+
+
+## 7. Reference
 
 - Deng, J., Guo, J., Xue, N., & Zafeiriou, S. (2019). Arcface: Additive angular margin loss for deep face recognition. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition (pp. 4690-4699).
 
