@@ -13,6 +13,8 @@ import dlib
 import piheaan as heaan
 from heaan_utils import Heaan
 import pandas as pd
+import statistics
+
 
 
 class FeatureProcessing:
@@ -107,6 +109,9 @@ if __name__ == '__main__':
         print("Could not open webcam")
         exit()
 
+    # List for storing execution time
+    time_spent = []
+    
     while webcam.isOpened():
         # Read the frame from the webcam
         status, frame = webcam.read()
@@ -149,6 +154,8 @@ if __name__ == '__main__':
                             he.encrypt(msg1, ctxt1)
             
             else:
+                # Start time of inference
+                start = time.time()
                 if isinstance(feature, np.ndarray):
                     input_feat = np.squeeze(feature)
                     msg2 = he.feat_msg_generate(input_feat)
@@ -184,6 +191,24 @@ if __name__ == '__main__':
                 else:
                     # No face
                     pass
+                
+                # End time of inference
+                end = time.time()
+                # Calculate execution time
+                # Unit of execution time is second
+                end_to_start = end - start
+                # print(f"{end_to_start} sec")
+                # Store execution time per frame
+                time_spent.append(end_to_start)
+                
+                # # Used 10000 frames to obtain of average and standard deviation execution time
+                # if len(time_spent) == 10000:
+                #     average = statistics.mean(time_spent)
+                #     standard_deviation = statistics.stdev(time_spent)
+                #     print("Average : ", average)
+                #     print("Standard Deviation : ", standard_deviation)
+                #     break;
+                
             
         cv2.imshow('Face Detection', frame)
         if cv2.waitKey(1) == 27:
