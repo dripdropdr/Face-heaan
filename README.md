@@ -13,6 +13,8 @@
     - Similarity Measurement : Cosine Similarity, Manhattan Similarity, Euclidean Similarity
     - Webcam Inference
 
+- [Demo Video][link3]
+
 
 ## 2. Environment
 
@@ -81,18 +83,10 @@
 
 2. Result
 
-    <img width="500" alt="Screenshot 2023-05-20 at 3 14 36 PM" src="https://github.com/jeewonkimm2/Face-heaan/assets/108987773/79f63e39-a2f0-4473-8387-4cd9d3124e1e">
+    <img width="500" alt="Screenshot 2023-05-21 at 12 20 45 PM" src="https://github.com/jeewonkimm2/Face-heaan/assets/108987773/771b3c62-d1d4-46cc-bccd-572e69e50dbf">
 
     - Unlock : When registered face is detected.
-    
-    
-    <이미지 추가 필>
-
     - Lock : When registered face is not detected.
-
-
-    <이미지 추가 필>
-    
     - Too many faces : When many faces are detected.
 
 
@@ -126,3 +120,4 @@ result = he.compare('cosine', cos_thres, res_ctxt)
 [link]: https://github.com/jeewonkimm2/Face-heaan/blob/main/inference_heaan.py
 [link1]: https://github.com/jeewonkimm2/Face-heaan/blob/main/requirements.txt
 [link2]: https://pan.baidu.com/s/1tFEX0yjUq3srop378Z1WMA
+[link3]: https://youtu.be/k0vf9HcV2Nw
