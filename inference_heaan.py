@@ -96,9 +96,9 @@ if __name__ == '__main__':
     fe_proc = FeatureProcessing()
     
     # Set the threshold values
-    cos_thres = opt.cosin_threshold
-    euc_thres = opt.euc_threshold
-    man_thres = opt.man_threshold
+    cos_thres = opt.cosine_thres
+    euc_thres = opt.euc_thres
+    man_thres = opt.man_thres
 
     register_feat = np.array([])
     
