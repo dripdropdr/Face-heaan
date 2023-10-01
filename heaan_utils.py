@@ -23,6 +23,7 @@ class Heaan:
 
   def heaan_initilize(self):
 
+    
       heaan.make_bootstrappable(self.context) # make parameter bootstrapable
 
       # # create and save secret keys
@@ -39,7 +40,7 @@ class Heaan:
       self.pk = heaan.KeyPack(self.context, self.key_file_path+"/") # load public key
       self.pk.load_enc_key()
       self.pk.load_mult_key()
-
+      # Create evaluators and decryptor
       self.eval = heaan.HomEvaluator(self.context, self.pk) # to load piheaan basic function
       self.dec = heaan.Decryptor(self.context) # for self.decrypt
       self.enc = heaan.Encryptor(self.context) # for self.encrypt
@@ -55,10 +56,12 @@ class Heaan:
 
 
   def decrypt(self, msg, ctxt):
+      # Decrypt the ciphertext using the secret key
       self.dec.decrypt(msg, self.sk, ctxt)
 
 
   def similarity_calc(self, res_ctxt):
+      # Calculate similarity by decrypting the result ciphertext
       sim = heaan.Message(self.log_slots)
       self.dec.decrypt(res_ctxt, self.sk, sim)
       sim_ = sum(sim)/len(sim)
@@ -66,6 +69,7 @@ class Heaan:
 
 
   def feat_msg_generate(self, feat):
+      # Generate a message from the feature array
       feat_list = feat.tolist()
       feat_padding = feat_list + (self.num_slots-len(feat_list))*[0]
       msg = heaan.Message(self.log_slots)
@@ -76,30 +80,30 @@ class Heaan:
 
 
   def cosin_sim(self, ctxt1, ctxt2):
+      # Perform cosine similarity computation using HEAAN
 
       # # denominator
       # ctxt1 = heaan.Ciphertext(self.context)
       # ctxt1.load(ctxt_path)
-      # 안되면 save
 
-      # mult 
+      # mult : Multiply the ciphertexts
       ctxt3 = heaan.Ciphertext(self.context)
       self.eval.mult(ctxt1, ctxt2, ctxt3)
 
-      # sigma
+      # sigma : Perform rotation and reduction
       denom_ctxt = heaan.Ciphertext(self.context)
       self.eval.left_rotate_reduce(ctxt3,1,self.num_slots,denom_ctxt)
 
       # numerator
 
-      # square
+      # square : Square the ciphertexts
       ctxt1_sqr = heaan.Ciphertext(self.context)
       self.eval.square(ctxt1, ctxt1_sqr)
 
       ctxt2_sqr = heaan.Ciphertext(self.context)
       self.eval.square(ctxt2, ctxt2_sqr)
 
-      # sigma
+      # sigma : Perform rotation and reduction on squared ciphertexts
       ctxt1_rot = heaan.Ciphertext(self.context)
       self.eval.left_rotate_reduce(ctxt1_sqr,1,self.num_slots,ctxt1_rot)
 
@@ -111,6 +115,7 @@ class Heaan:
       ## divide by 100 and mult 10 to later result value
       ## input range : 2^-18 ≤ x ≤ 2
 
+      # Take square root of rotated ciphertexts
       hun_msg = heaan.Message(self.log_slots)
       for i in range(self.num_slots):
           hun_msg[i] = 0.01
@@ -149,6 +154,7 @@ class Heaan:
 
 
   def euclidean_distance(self, ctxt1, ctxt2):
+      # Compute the Euclidean distance between two ciphertexts
 
       # # sub
       # ctxt1 = heaan.Ciphertext(self.context)
@@ -178,6 +184,7 @@ class Heaan:
 
 
   def manhattan_distance(self, ctxt1, ctxt2):
+      # Compute the Manhattan distance between two ciphertexts
     
       small_tmp_ctxt= heaan.Ciphertext(self.context)
       small_ctxt = heaan.Ciphertext(self.context)
@@ -231,6 +238,7 @@ class Heaan:
 
 
   def compare(self, type, thres, comp_ctxt):
+    # Compare the similarity/distance value with a threshold
     thres_list = []
     thres_list.append(thres)
 

@@ -17,18 +17,24 @@ import pandas as pd
 
 class FeatureProcessing:
     def __init__(self) -> None:
+        # Initialize the face detector from dlib
         self.face_detector = dlib.get_frontal_face_detector()
         self.detects = None
 
     def get_features(self, model, frame, device):
+        # Preprocess the frame to obtain faces and compute features
         pre_res = self.preproc(frame)
         if type(pre_res) != int:
+            # Convert preprocessed data to torch tensor and move it to the specified device
             data = torch.from_numpy(pre_res)
             data = data.to(device)
+            # Extract features using the model
             feat = model(data)
             feat = feat.detach().numpy()
+            # Split the features into two halves
             fe_1 = feat[::2]
             fe_2 = feat[1::2]
+            # Concatenate the feature halves
             feature = np.hstack((fe_1, fe_2))
             return feature
         else:
@@ -36,6 +42,7 @@ class FeatureProcessing:
             else:   return -1 # Many face
 
     def preproc(self, frame):
+        # Detect faces in the frame using the face detector
         dets = self.face_detector(frame, 0)
         # when face not detected
         if len(dets) == 0:
@@ -43,12 +50,16 @@ class FeatureProcessing:
         # when face detected
         elif len(dets) == 1:
             self.detects = dets[0]
-            face = frame[self.detects.top():self.detects.bottom(), self.detects.left():self.detects.right()] # face 차원 확인하기
+            # Extract the face region from the frame and convert it to grayscale
+            face = frame[self.detects.top():self.detects.bottom(), self.detects.left():self.detects.right()]
             face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+            # Resize the face to a fixed size
             face = cv2.resize(face, (125, 125), interpolation=cv2.INTER_CUBIC)
-            # cv2.imwrite('tmp.jpg', face)
+            # Create a stack of the face and its horizontally flipped version
             faces = np.dstack((face, np.fliplr(face))).transpose((2, 0, 1))
+            # Add an extra dimension to match the expected input shape of the model
             faces = faces[:, np.newaxis, :, :]
+            # Normalize the face data
             faces = faces.astype(np.float32, copy=False)
             faces -= 127.5
             faces /= 127.5
@@ -67,6 +78,7 @@ if __name__ == '__main__':
     he = Heaan()
     ctxt1, ctxt2 = he.heaan_initilize()
 
+    # Select the appropriate model based on the specified backbone
     opt = Config()
     if opt.backbone == 'resnet18':
         model = resnet_face18(opt.use_se)
@@ -83,10 +95,10 @@ if __name__ == '__main__':
 
     fe_proc = FeatureProcessing()
     
-    # threshold
-    cos_thres = opt.cosine_thres
-    euc_thres = opt.euc_thres
-    man_thres = opt.man_thres
+    # Set the threshold values
+    cos_thres = opt.cosin_threshold
+    euc_thres = opt.euc_threshold
+    man_thres = opt.man_threshold
 
     register_feat = np.array([])
     
@@ -96,19 +108,23 @@ if __name__ == '__main__':
         exit()
 
     while webcam.isOpened():
+        # Read the frame from the webcam
         status, frame = webcam.read()
         if status:
+            # Extract features from the frame
             feature = fe_proc.get_features(model, frame, cpu)
             h, w = frame.shape[:2]
-            font_state = (int(w/2), int(h/3*2))
-
+            font_state = (int(w/2), int(h*0.8))
+            
             # User registeration part
             if register_feat.shape[0] <= 4: 
+                # Display user registration instructions on the frame
                 (text_width, text_height) = cv2.getTextSize("User Registration Phase. Press space", cv2.FONT_HERSHEY_PLAIN, 3, 3)[0]
                 text_offset_x = (w - text_width) // 2
-                text_offset_y = (h + text_height) // 2
+                text_offset_y = (h + text_height) // 8
                 frame = cv2.putText(frame, "User Registration Phase. Press space", (text_offset_x, text_offset_y), cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3, cv2.LINE_AA)
-                
+
+                # Display specific instructions based on the number of registered features
                 if register_feat.shape[0] == 0:
                     frame = cv2.putText(frame, "Look front!", font_state, cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 0), 3, cv2.LINE_AA)
                 elif register_feat.shape[0] == 1:
@@ -120,6 +136,7 @@ if __name__ == '__main__':
                 elif register_feat.shape[0] == 4: 
                     frame = cv2.putText(frame, "Look front again!", font_state, cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 0), 3, cv2.LINE_AA)
 
+                # Register the feature if it is an array and the space bar is pressed
                 if isinstance(feature, np.ndarray) and cv2.waitKey(100) == 32:
                     frame = cv2.putText(frame, "registered", (h-20, w-20), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 3, cv2.LINE_AA)
                     if register_feat.size == 0:
@@ -152,6 +169,7 @@ if __name__ == '__main__':
                     #print similarity
                     # print(he.similarity_calc(res_ctxt), result)
                     
+                    # Display the result on the frame
                     if result == "unlock":
                         face = fe_proc.detects
                         x, y, w, h = face.left(), face.top(), face.width(), face.height()
