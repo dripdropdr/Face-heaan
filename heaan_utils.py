@@ -22,6 +22,11 @@ class Heaan:
 
 
   def heaan_initilize(self):
+      # log_slots is used for the number of slots per ciphertext
+        # It depends on the parameter used (ParameterPreset)
+        # The number '15' is the value for maximum number of slots,
+        # but you can also use a smaller number (ex. 2, 3, 5, 7 ...)
+        # The actual number of slots in the ciphertext is calculated as below.
 
     
       heaan.make_bootstrappable(self.context) # make parameter bootstrapable

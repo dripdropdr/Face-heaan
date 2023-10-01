@@ -73,7 +73,8 @@ class ResNet50():
         if len(self._opt.gpu_ids) > 1:
             self.resnet50 = torch.nn.DataParallel(self.resnet50, device_ids=self._opt.gpu_ids)
         # self.resnet50.cuda()
-    def load(self, model_path):
+        
+    def load(self, model_path, DEVICE):
         self.resnet50.load_state_dict(torch.load(model_path, map_location=DEVICE), strict=False)  
 
     def set_eval(self):

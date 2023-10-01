@@ -9,6 +9,7 @@ import sys
 import time
 from PIL import Image
 from glob import glob
+from models import ResNet50
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -37,30 +38,21 @@ def parse_args():
     opt = parser.parse_args()
     return opt
 
-
-def run_tracker(opt, model, sample):
-
-    # init track result
-    track_val = {}
-    for task in opt.tasks:
-        track_val[task] = {'outputs':[], 'estimates':[], 'frames_ids':[]}
+def initialize_emotracker(DEVICE):
+    opt = parse_args()
+    model = ResNet50(opt)
+    model.set_eval()
+    model.resnet50.to(DEVICE)
+    model_path = os.path.join('emotracker/pretrained_models', 'CNN', '0.pth')
+    if not os.path.exists(model_path):
+        print("Error: Emotracker Pretrained model doesn't exist.")
+        exit()
+    model.load(model_path, DEVICE)
     
-    estimates, outputs = model.forward(input_image = sample['image'])
-    #store the predictions and labels
-    for task in opt.tasks:
-        track_val[task]['outputs'].append(outputs[task])
-        track_val[task]['frames_ids'].append(np.array(sample['frames_ids']))
-        track_val[task]['estimates'].append(estimates[task])
-        for key in track_val[task].keys():
-            try:
-                track_val[task][key] = np.concatenate(track_val[task][key], axis=0)
-            except ValueError as e:
-                track_val[task][key] = np.array([0])
+    return model
 
-    return track_val
-
-
-def preprocess_images(images, val_transforms, index):
+def preprocess_images(images, model, index = 0):
+    val_transforms = model.resnet50.backbone.compose_transforms
     images_transform = []
     frames_ids = list([index] * len(images))
     for image in images:
@@ -75,6 +67,27 @@ def preprocess_images(images, val_transforms, index):
                 }
 
     return sample
+
+# def run_tracker(opt, model, sample):
+
+#     # init track result
+#     track_val = {}
+#     for task in opt.tasks:
+#         track_val[task] = {'outputs':[], 'estimates':[], 'frames_ids':[]}
+    
+#     estimates, outputs = model.forward(input_image = sample['image'])
+#     #store the predictions and labels
+#     for task in opt.tasks:
+#         track_val[task]['outputs'].append(outputs[task])
+#         track_val[task]['frames_ids'].append(np.array(sample['frames_ids']))
+#         track_val[task]['estimates'].append(estimates[task])
+#         for key in track_val[task].keys():
+#             try:
+#                 track_val[task][key] = np.concatenate(track_val[task][key], axis=0)
+#             except ValueError as e:
+#                 track_val[task][key] = np.array([0])
+
+#     return track_val
 
 if __name__ == '__main__':
 
