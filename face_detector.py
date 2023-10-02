@@ -52,11 +52,14 @@ def detect_faces_with_dlib(detector, frame, gray):
 
     cropped_faces = []
     for idx, rect in enumerate(faces):
-        x, y, w, h = rect.left(), rect.top(), rect.width(), rect.height()
-        cropped_face = cv2.resize(frame[y:y+h, x:x+w, :], (112, 112))
-        cropped_faces.append(cropped_face)
-        # cv2.imwrite(os.path.join(face_path, f'{idx}.jpg'), cropped_face)
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        try:
+            x, y, w, h = rect.left(), rect.top(), rect.width(), rect.height()
+            cropped_face = cv2.resize(frame[y:y+h, x:x+w, :], (112, 112))
+            cropped_faces.append(cropped_face)
+            # cv2.imwrite(os.path.join(face_path, f'{idx}.jpg'), cropped_face)
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        except:
+            print("No faces!! ")
 
     print(f'dlib: {time()-start}')
     # cv2.imwrite('save-directory/dlib_detection.png', img)

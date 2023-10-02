@@ -9,7 +9,7 @@ import sys
 import time
 from PIL import Image
 from glob import glob
-from models import ResNet50
+from emotracker.models import ResNet50
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 

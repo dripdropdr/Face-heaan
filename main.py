@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import os
+# os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
 import sys
 import cv2
 import dlib
@@ -8,7 +9,6 @@ import torch
 import numpy as np
 from emotracker.run_inference import initialize_emotracker, preprocess_images
 from face_extractor.face_extractor import initialize_face_extractor, preprocss_for_extractor, get_face_vector_from_extractor
-
 from face_detector import detect_faces_with_dlib
 import piheaan as heaan
 from heaan_utils import Heaan
@@ -49,7 +49,8 @@ if __name__ == '__main__':
         success, frame = webcam.read()
         if success:
             # Extract design features from the frame
-            h, w, font_state = frame.shape[:2], (int(w/2), int(h*0.8))
+            h, w, = frame.shape[:2]
+            font_state = (int(w/2), int(h*0.8))
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame, cropped_faces, faces = detect_faces_with_dlib(face_detector, frame, gray) # bounding box 그려줌
@@ -96,7 +97,7 @@ if __name__ == '__main__':
                     face_arr = preprocss_for_extractor(cropped_faces)
                     face_vector = get_face_vector_from_extractor(face_extractor, face_arr, DEVICE)
                     
-                    msg2 = he.feat_msg_generate(face_vector)
+                    msg2 = he.feat_msg_generate(np.squeeze(face_vector))
                     he.encrypt(msg2, ctxt2)
                     
                     # 1) cosine similarity measurement
