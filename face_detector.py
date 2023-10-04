@@ -61,7 +61,7 @@ def detect_faces_with_dlib(detector, frame, gray):
         except:
             print("No faces!! ")
 
-    print(f'dlib: {time()-start}')
+    # print(f'dlib: {time()-start}')
     # cv2.imwrite('save-directory/dlib_detection.png', img)
     # cv2.imshow('dlib Face Detection', img)
     # cv2.waitKey(0)

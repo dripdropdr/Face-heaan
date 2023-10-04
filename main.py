@@ -30,11 +30,12 @@ face_extractor = initialize_face_extractor(DEVICE)
 emotracker = initialize_emotracker(DEVICE)
 
 # Set the threshold values
-cos_thres = 0.25572848
+cos_thres = 0.75572848
 
 register_feat = np.array([])
 face_verified = False
 smile_verified = False
+verification_start = False
 
 
 if __name__ == '__main__':
@@ -94,34 +95,40 @@ if __name__ == '__main__':
                 
                 # After Registration
                 else:
-                    face_arr = preprocss_for_extractor(cropped_faces)
-                    face_vector = get_face_vector_from_extractor(face_extractor, face_arr, DEVICE)
-                    
-                    msg2 = he.feat_msg_generate(np.squeeze(face_vector))
-                    he.encrypt(msg2, ctxt2)
-                    
-                    # 1) cosine similarity measurement
-                    res_ctxt = he.cosin_sim(ctxt1, ctxt2)
-                    face_verified = True if he.compare('cosine', cos_thres, res_ctxt) == 'unlock' else False
-                    
-                    # Unverified !!
-                    if not face_verified:
-                        frame = cv2.putText(frame, "Lock", font_state, cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3, cv2.LINE_AA)
-                        continue
+                    if not verification_start:
+                        print('Before')
+                        frame = cv2.putText(frame, "Click space if you want to verify", (text_offset_x, text_offset_y), cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 0), 3, cv2.LINE_AA)
+                        if cv2.waitKey(100) == 32:
+                            verification_start = True
+                    else:
+                        face_arr = preprocss_for_extractor(cropped_faces)
+                        face_vector = get_face_vector_from_extractor(face_extractor, face_arr, DEVICE)
+                        
+                        msg2 = he.feat_msg_generate(np.squeeze(face_vector))
+                        he.encrypt(msg2, ctxt2)
+                        
+                        # 1) cosine similarity measurement
+                        res_ctxt = he.cosin_sim(ctxt1, ctxt2)
+                        face_verified = True if he.compare('cosine', cos_thres, res_ctxt) == 'unlock' else False
+                        print('verificaiton', face_verified)
+                        
+                        # Unverified !!
+                        if not face_verified:
+                            frame = cv2.putText(frame, "Lock", font_state, cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3, cv2.LINE_AA)
 
-                    if face_verified and not smile_verified:
-                        frame = cv2.putText(frame, "Smile !!", (text_offset_x, text_offset_y), cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3, cv2.LINE_AA)
-                        sample = preprocess_images(cropped_faces, emotracker)
-                        estimates, outputs = emotracker.forward(input_image = sample['image'])
-                        smile_verified = True if int(estimates['EXPR']) == 4 else False
+                        if face_verified and not smile_verified:
+                            frame = cv2.putText(frame, "Smile !!", font_state, cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3, cv2.LINE_AA)
+                            sample = preprocess_images(cropped_faces, emotracker)
+                            estimates, outputs = emotracker.forward(input_image = sample['image'])
+                            smile_verified = True if int(estimates['EXPR']) == 4 else False
 
-                    # Verified !!
-                    if face_verified and smile_verified:
-                        frame = cv2.putText(frame, "Unlock", font_state, cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 3, cv2.LINE_AA)                    
+                        # Verified !!       
+                        if face_verified and smile_verified:
+                            frame = cv2.putText(frame, "Unlock", font_state, cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 3, cv2.LINE_AA)                    
             
             # Too many faces or No faces...
             else:
-                pass
+                face_verified = False
 
         cv2.imshow('Face Detection', frame)
         if cv2.waitKey(1) == 27:
